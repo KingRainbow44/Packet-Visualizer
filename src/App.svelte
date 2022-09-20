@@ -1,319 +1,315 @@
 <script lang="ts">
-    import Packet from "./Packet.svelte";
-    import VirtualList from "svelte-virtual-list-ce";
-    
-    import { tick } from "svelte";
-    import { JSONEditor } from "svelte-jsoneditor";
-    import "svelte-jsoneditor/themes/jse-theme-dark.css";
+  import Packet from "./Packet.svelte";
+  import VirtualList from "svelte-virtual-list-ce";
 
-    // Property declaration.
-    let stick: any = null;
-    let packets: any[] = [];
-    let filteredPackets: any[] = [];
-    let currentPacket: any | null = null;
-    let filter: string = "", jsonFilter: string = "";
-    let endIndex: number = 0, filterEndIndex: number = 0;
-    let node: any, details: any, filterTableHost: any, orand: boolean = true;
-    
-    let editorCss: string = "";
-    let editor: JSONEditor, decodeEditor: any = true;
+  import { tick } from "svelte";
+  import { JSONEditor } from "svelte-jsoneditor";
+  import "svelte-jsoneditor/themes/jse-theme-dark.css";
 
-    let tableHost: any = null;
-    let showDecode: boolean = true;
+  // Property declaration.
+  let stick: any = null;
+  let packets: any[] = [];
+  let filteredPackets: any[] = [];
+  let currentPacket: any | null = null;
+  let filter: string = "", jsonFilter: string = "";
+  let endIndex: number = 0, filterEndIndex: number = 0;
+  let node: any, details: any, filterTableHost: any, orand: boolean = true;
 
-    setTimeout(() => {
-        let interval = setInterval(() => {
-            packets.push({
-                packetId: Math.floor(Math.random() * 100),
-                packetName: "TestPacket",
-                source: "server",
-                time: Math.floor(Math.random() * 100),
-                data: JSON.stringify({test: "test", a: "b", ffff: Math.floor(Math.random() * 100)}),
-                length: 1333,
-                index: packets.length
-            });
-            packets = packets;
-            
-            if (packets.length > 100)
-                clearInterval(interval);
-        }, 50);
-    }, 500);
-    
-    /**
-     * Scrolls to the specified index.
-     */
-    let scrollToIndex = () => {};
+  let editorCss: string = "";
+  let editor: JSONEditor, decodeEditor: any = true;
 
-    /**
-     * Scrolls to the specified item.
-     */
-    let scrollToIndexFilter = () => {};
+  let tableHost: any = null;
+  let showDecode: boolean = true;
 
-    /**
-     * Scrolls to the end of the chain.
-     */
-    function scrollToEnd() {
-        scrollToIndex(packets.length - 1, { behavior: "auto" });
-    }
-    
-    /**
-     * Clears the stored packets.
-     */
-    function clear() {
-        packets = [];
-    }
+  /**
+   * Scrolls to the specified index.
+   */
+  let scrollToIndex = () => {
+  };
 
-    /**
-     * Copies data about the currently selected packet.
-     */
-    function copyCurrentPacket() {
-        copyToClipboard(currentPacket.data);
-    }
+  /**
+   * Scrolls to the specified item.
+   */
+  let scrollToIndexFilter = () => {
+  };
 
-    /**
-     * Shows details about a packet.
-     * @param packet The packet to show details about.
-     */
-    function showPacketDetails(packet) {
-        currentPacket = packet;
-        tick().then(() => {
-            if (packet.data && packet.decode && showDecode) {
-                editorCss = "two-editor";
-            } else {
-                editorCss = "one-editor";
-            }
-            if (!packet.data && packet.decode){
-                showDecode = true;
-            }
-            if (packet.data) {
-                editor.set({ json: JSON.parse(packet.data) });
-            }
-            if (showDecode && packet.decode) {
-                decodeEditor.set({ json: JSON.parse(packet.data) });
-            }
-        });
-    }
+  /**
+   * Adds the packet to the list.
+   * Refreshes the list.
+   * @param packet The packet to add.
+   */
+  function showPacket(packet) {
+    packets.push(packet);
+    packets = packets;
+  }
 
-    /**
-     * Handles rendering the packet flyout menu.
-     * @param mode The mode to render.
-     * @param items The items to render.
-     */
-    function handleRenderMenu(mode, items) {
-        const rawDecButton = {
-            onClick: toggleShowDecode,
-            text: "RD",
-            title: "Raw Decode",
-            className: "jse-button raw-decode-btn",
-        };
+  /**
+   * Scrolls to the end of the chain.
+   */
+  function scrollToEnd() {
+    scrollToIndex(packets.length - 1, { behavior: "auto" });
+  }
 
-        const space = { space: true };
-        const separator = { separator: true };
-        const itemsWithoutSpace = items.slice(0, items.length - 1);
-        return itemsWithoutSpace.concat([separator, rawDecButton, space]);
-    }
-    
-    /**
-     * Creates a packet filter from a packet and the current filters.
-     */
-    function packetFilter(packet) {
-        if(!filter.length && !jsonFilter.length) return false;
-        let and: any = filter.length && jsonFilter.length;
-        if(!orand) and = false;
-        let text, json;
-        if(filter.length && packet.packetName.includes && 
-          packet.packetName.toLowerCase().includes(filter.toLowerCase())) text = true;
-        if(filter.length && ('' + packet.packetId).includes(filter)) text = true;
-        if(!and && text) return true;
-        if(jsonFilter.length && packet.object && 
-          JSON.stringify(packet.object).toLowerCase().includes(jsonFilter.toLowerCase())) json = true;
-        if(!and && json) return true;
-        return !!(and && text && json);
-    }
+  /**
+   * Clears the stored packets.
+   */
+  function clear() {
+    packets = [];
+  }
 
-    /**
-     * Toggles the show decode state.
-     * Displays the current packet.
-     */
-    function toggleShowDecode() {
-        tick().then(() => {
-            showDecode = !showDecode;
-            showPacketDetails(currentPacket);
-        });
-    }
-    
-    /*
-     * Browser utilities.
-     */
+  /**
+   * Copies data about the currently selected packet.
+   */
+  function copyCurrentPacket() {
+    copyToClipboard(currentPacket.data);
+  }
 
-    /**
-     * Invoked when the page moves.
-     * @param event The event.
-     */
-    function move(event: any) {
-        const rect: any = node.getBoundingClientRect();
-        details.style.width = 100 - (((event.clientX - rect.left) / node.offsetWidth) * 100) + '%';
-    }
-    
-    /**
-     * Invoked when the resize event is done.
-     * @param event The event.
-     */
-    function stopResize(event: any) {
-        document.removeEventListener('mouseup', stopResize);
-        document.removeEventListener('mousemove', move);
-        node.style.userSelect = null;
-    }
-    
-    /**
-     * Copies the specified text to the user's clipboard.
-     * @param text The data to place in the clipboard.
-     */
-    function copyToClipboard(text: string) {
-        if (window.clipboardData && window.clipboardData.setData) {
-            // Internet Explorer-specific code path to prevent textarea being shown while dialog is visible.
-            return window.clipboardData.setData("Text", text);
-        } else if (document.queryCommandSupported && document.queryCommandSupported("copy")) {
-            const textArea = document.createElement("textarea");
-            textArea.textContent = text;
-            textArea.style.position = "fixed";  // Prevent scrolling to bottom of page in Microsoft Edge.
-            document.body.appendChild(textArea);
-            textArea.select();
-            
-            try {
-                return document.execCommand("copy");  // Security exception may be thrown by some browsers.
-            } catch {
-                console.warn("Copy to clipboard failed.");
-                return prompt("Copy to clipboard: Ctrl + C, Enter", text);
-            } finally {
-                document.body.removeChild(textArea);
-            }
-        }
-    }
+  /**
+   * Shows details about a packet.
+   * @param packet The packet to show details about.
+   */
+  function showPacketDetails(packet) {
+    currentPacket = packet;
+    tick().then(() => {
+      if (packet.data && packet.decode && showDecode) {
+        editorCss = "two-editor";
+      } else {
+        editorCss = "one-editor";
+      }
+      if (!packet.data && packet.decode) {
+        showDecode = true;
+      }
+      if (packet.data) {
+        editor.set({ json: JSON.parse(packet.data) });
+      }
+      if (showDecode && packet.decode) {
+        decodeEditor.set({ json: JSON.parse(packet.data) });
+      }
+    });
+  }
 
-    /**
-     * Invoked when the browser window is resized.
-     * @param event The event.
-     */
-    function onResize(event: Event) {
-        node.style.userSelect = 'none';
-        document.addEventListener('mousemove', move);
-        document.addEventListener('mouseup', stopResize);
-    }
-    
-    $: if(filter.length || jsonFilter.length || orand) {
-        tick().then(() => {
-            filteredPackets = packets.filter(packetFilter, filter, jsonFilter);
-            setTimeout(() => {
-                scrollToIndexFilter(10, {behavior: 'auto'})
-                scrollToIndexFilter(0, {behavior: 'auto'})
-            }, 10);
-        });
-    } else {
-        tick().then(() => {
-            filteredPackets = [];
-        });
-    }
+  /**
+   * Handles rendering the packet flyout menu.
+   * @param mode The mode to render.
+   * @param items The items to render.
+   */
+  function handleRenderMenu(mode, items) {
+    const rawDecButton = {
+      onClick: toggleShowDecode,
+      text: "RD",
+      title: "Raw Decode",
+      className: "jse-button raw-decode-btn"
+    };
 
-    $: {
-        tick().then(() => scrollToEnd(filter, jsonFilter));
+    const space = { space: true };
+    const separator = { separator: true };
+    const itemsWithoutSpace = items.slice(0, items.length - 1);
+    return itemsWithoutSpace.concat([separator, rawDecButton, space]);
+  }
+
+  /**
+   * Creates a packet filter from a packet and the current filters.
+   */
+  function packetFilter(packet) {
+    if (!filter.length && !jsonFilter.length) return false;
+    let and: any = filter.length && jsonFilter.length;
+    if (!orand) and = false;
+    let text, json;
+    if (filter.length && packet.packetName.includes &&
+      packet.packetName.toLowerCase().includes(filter.toLowerCase())) text = true;
+    if (filter.length && ("" + packet.packetId).includes(filter)) text = true;
+    if (!and && text) return true;
+    if (jsonFilter.length && packet.object &&
+      JSON.stringify(packet.object).toLowerCase().includes(jsonFilter.toLowerCase())) json = true;
+    if (!and && json) return true;
+    return !!(and && text && json);
+  }
+
+  /**
+   * Toggles the show decode state.
+   * Displays the current packet.
+   */
+  function toggleShowDecode() {
+    tick().then(() => {
+      showDecode = !showDecode;
+      showPacketDetails(currentPacket);
+    });
+  }
+
+  /*
+   * Browser utilities.
+   */
+
+  /**
+   * Invoked when the page moves.
+   * @param event The event.
+   */
+  function move(event: any) {
+    const rect: any = node.getBoundingClientRect();
+    details.style.width = 100 - (((event.clientX - rect.left) / node.offsetWidth) * 100) + "%";
+  }
+
+  /**
+   * Invoked when the resize event is done.
+   * @param event The event.
+   */
+  function stopResize(event: any) {
+    document.removeEventListener("mouseup", stopResize);
+    document.removeEventListener("mousemove", move);
+    node.style.userSelect = null;
+  }
+
+  /**
+   * Copies the specified text to the user's clipboard.
+   * @param text The data to place in the clipboard.
+   */
+  function copyToClipboard(text: string) {
+    if (window.clipboardData && window.clipboardData.setData) {
+      // Internet Explorer-specific code path to prevent textarea being shown while dialog is visible.
+      return window.clipboardData.setData("Text", text);
+    } else if (document.queryCommandSupported && document.queryCommandSupported("copy")) {
+      const textArea = document.createElement("textarea");
+      textArea.textContent = text;
+      textArea.style.position = "fixed";  // Prevent scrolling to bottom of page in Microsoft Edge.
+      document.body.appendChild(textArea);
+      textArea.select();
+
+      try {
+        return document.execCommand("copy");  // Security exception may be thrown by some browsers.
+      } catch {
+        console.warn("Copy to clipboard failed.");
+        return prompt("Copy to clipboard: Ctrl + C, Enter", text);
+      } finally {
+        document.body.removeChild(textArea);
+      }
     }
-    
-    $: if (stick) {
-        tick().then(() => scrollToEnd(packets));
-    }
+  }
+
+  /**
+   * Invoked when the browser window is resized.
+   * @param event The event.
+   */
+  function onResize(event: Event) {
+    node.style.userSelect = "none";
+    document.addEventListener("mousemove", move);
+    document.addEventListener("mouseup", stopResize);
+  }
+
+  $: if (filter.length || jsonFilter.length || orand) {
+    tick().then(() => {
+      filteredPackets = packets.filter(packetFilter, filter, jsonFilter);
+      setTimeout(() => {
+        scrollToIndexFilter(10, { behavior: "auto" });
+        scrollToIndexFilter(0, { behavior: "auto" });
+      }, 10);
+    });
+  } else {
+    tick().then(() => {
+      filteredPackets = [];
+    });
+  }
+
+  $: {
+    tick().then(() => scrollToEnd(filter, jsonFilter));
+  }
+
+  $: if (stick) {
+    tick().then(() => scrollToEnd(packets));
+  }
 </script>
 
 <svelte:head>
-    <!--{@html materialDarker}-->
+  <!--{@html materialDarker}-->
 </svelte:head>
 
 <!-- Start UI. -->
 <aside>
-    <button title="Clear" data-icon="clear" class="red" on:click={clear}></button>
-    <button title="Lock scroll at the bottom" data-icon="keyboard_arrow_down" style="margin-top: auto;" class:green={stick} on:click={() => stick = !stick}></button>
-    {#if currentPacket}
-        <button title="Copy current packet" data-icon="collections_bookmark" on:click={copyCurrentPacket}></button>
-    {:else}
-        <button title="Copy current packet" data-icon="insert_drive_file" style="margin-top: auto; opacity: 0.5"></button>
-        <button title="Copy current packet" data-icon="collections_bookmark" style="opacity: 0.5"></button>
-    {/if}
+  <button title="Clear" data-icon="clear" class="red" on:click={clear}></button>
+  <button title="Lock scroll at the bottom" data-icon="keyboard_arrow_down" style="margin-top: auto;"
+          class:green={stick} on:click={() => stick = !stick}></button>
+  {#if currentPacket}
+    <button title="Copy current packet" data-icon="collections_bookmark" on:click={copyCurrentPacket}></button>
+  {:else}
+    <button title="Copy current packet" data-icon="insert_drive_file" style="margin-top: auto; opacity: 0.5"></button>
+    <button title="Copy current packet" data-icon="collections_bookmark" style="opacity: 0.5"></button>
+  {/if}
 </aside>
 
 <main bind:this={node}>
-    <div class="main-host">
-        <div class="filter-host">
-            <input type="text" bind:value={filter} placeholder=" PACKET" />
-            <div class="orand" on:click={() => orand = !orand}>
-                <span and class:s={orand}>AND</span>
-                <span or class:s={!orand}>OR</span>
-            </div>
-            <input type="text" bind:value={jsonFilter} placeholder=" JSON" />
+  <div class="main-host">
+    <div class="filter-host">
+      <input type="text" bind:value={filter} placeholder=" PACKET" />
+      <div class="orand" on:click={() => orand = !orand}>
+        <span and class:s={orand}>AND</span>
+        <span or class:s={!orand}>OR</span>
+      </div>
+      <input type="text" bind:value={jsonFilter} placeholder=" JSON" />
+    </div>
+
+    <div class="results-host" class:open={filter.length || jsonFilter.length}>
+      <div class="table">
+        <div class="tr thead">
+          <div class="time">Time</div>
+          <div class="idx">#</div>
+          <div class="src">Sender</div>
+          <div class="id">ID</div>
+          <div class="name">Packet Name</div>
+          <div class="len">Length</div>
+          <div class="json">Data</div>
         </div>
-        
-        <div class="results-host" class:open={filter.length || jsonFilter.length}>
-            <div class="table">
-                <div class="tr thead">
-                    <div class="time">Time</div>
-                    <div class="idx">#</div>
-                    <div class="src">Sender</div>
-                    <div class="id">ID</div>
-                    <div class="name">Packet Name</div>
-                    <div class="len">Length</div>
-                    <div class="json">Data</div>
-                </div>
-                <div class="tbody" bind:this={filterTableHost}>
-                    <VirtualList items={filteredPackets} let:item={packet} bind:scrollToIndexFilter bind:end={filterEndIndex}>
-                        <Packet packet={packet} idx={packet.index} current={packet == currentPacket} on:click={() => {
+        <div class="tbody" bind:this={filterTableHost}>
+          <VirtualList items={filteredPackets} let:item={packet} bind:scrollToIndexFilter bind:end={filterEndIndex}>
+            <Packet packet={packet} idx={packet.index} current={packet === currentPacket} on:click={() => {
                             scrollToIndex(packet.index); showPacketDetails(packet);
-                        }}/>
-                    </VirtualList>
-                </div>
-            </div>
+                        }} />
+          </VirtualList>
         </div>
-        
-        <div class="table-host">
-            <div class="table">
-                <div class="tr thead">
-                    <div class="time">Time</div>
-                    <div class="idx">#</div>
-                    <div class="src">Sender</div>
-                    <div class="id">ID</div>
-                    <div class="name">Packet Name</div>
-                    <div class="len">Length</div>
-                    <div class="json">Data</div>
-                </div>
-                <div class="tbody" bind:this={tableHost}>
-                    <VirtualList items={packets} let:item={packet} bind:scrollToIndex bind:end={endIndex}>
-                        <!-- this will be rendered for each currently visible item -->
-                        <Packet packet={packet} idx={packet.index + 1} current={packet == currentPacket} on:click={() => showPacketDetails(packet)}/>
-                    </VirtualList>
-                </div>
-            </div>
+      </div>
+    </div>
+
+    <div class="table-host">
+      <div class="table">
+        <div class="tr thead">
+          <div class="time">Time</div>
+          <div class="idx">#</div>
+          <div class="src">Sender</div>
+          <div class="id">ID</div>
+          <div class="name">Packet Name</div>
+          <div class="len">Length</div>
+          <div class="json">Data</div>
         </div>
+        <div class="tbody" bind:this={tableHost}>
+          <VirtualList items={packets} let:item={packet} bind:scrollToIndex bind:end={endIndex}>
+            <!-- this will be rendered for each currently visible item -->
+            <Packet packet={packet} idx={packet.index + 1} current={packet === currentPacket}
+                    on:click={() => showPacketDetails(packet)} />
+          </VirtualList>
+        </div>
+      </div>
     </div>
-    
-    <div class="resize" on:mousedown={onResize}></div>
-    
-    <div class="details-host" bind:this={details}>
-        {#if currentPacket}
-            {#if currentPacket.data}
-                <div class="{editorCss} jse-theme-dark">
-                    <JSONEditor
-                            bind:this={editor}
-                            onRenderMenu={handleRenderMenu}
-                            readOnly
-                    />
-                </div>
-            {/if}
-            
-            {#if currentPacket.decode && showDecode}
-                <div class="{editorCss} jse-theme-dark">
-                    <JSONEditor bind:this={decodeEditor} readOnly />
-                </div>
-            {/if}
-        {/if}
-    </div>
+  </div>
+
+  <div class="resize" on:mousedown={onResize}></div>
+
+  <div class="details-host" bind:this={details}>
+    {#if currentPacket}
+      {#if currentPacket.data}
+        <div class="{editorCss} jse-theme-dark">
+          <JSONEditor
+            bind:this={editor}
+            onRenderMenu={handleRenderMenu}
+            readOnly
+          />
+        </div>
+      {/if}
+
+      {#if currentPacket.decode && showDecode}
+        <div class="{editorCss} jse-theme-dark">
+          <JSONEditor bind:this={decodeEditor} readOnly />
+        </div>
+      {/if}
+    {/if}
+  </div>
 </main>
 <!--  End UI.  -->
 
@@ -335,7 +331,7 @@
     }
 
     aside {
-        background: rgba(0,0,10,0.4);
+        background: rgba(0, 0, 10, 0.4);
         flex-grow: 0;
         display: flex;
         flex-direction: column;
@@ -364,7 +360,7 @@
         color: white;
         height: 3rem;
         border: none;
-        border-bottom: 1px solid rgba(255,255,255,0.2);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
         padding: 0 1rem;
         flex-grow: 1;
         font-size: 1.4em;
@@ -385,7 +381,7 @@
     .table-host {
         flex-grow: 1;
         overflow: hidden;
-        background: rgba(0,0,10,0.6);
+        background: rgba(0, 0, 10, 0.6);
     }
 
     .table {
@@ -398,49 +394,10 @@
         height: 100%;
     }
 
-    .table :global(.tr) {
-        display: flex;
-    }
-
-    .table :global(.tr > .time) {
-        flex-basis: 3rem;
-        display: flex;
-        justify-content: center;
-    }
-
-    .table :global(.tr > .idx) {
-        flex-basis: 2.5rem;
-        display: flex;
-        justify-content: center;
-    }
-
-    .table :global(.tr > .src) {
-        flex-basis: 4rem;
-        display: flex;
-        justify-content: center;
-    }
-
-    .table :global(.tr > .id) {
-        flex-basis: 3rem;
-        justify-content: center;
-    }
-
-    .table :global(.tr > .name) {
-        flex-basis: 20rem;
-    }
-
-    .table :global(.tr > .len) {
-        flex-basis: 3rem;
-    }
-
-    .table :global(.tr > .json) {
-        flex-grow: 1;
-    }
-
     .table .thead > * {
         text-align: left;
-        background: rgba(0,0,0,0.4);
-        border-right: 1px solid rgba(255,255,255,0.1);
+        background: rgba(0, 0, 0, 0.4);
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
         font-size: 0.8em;
     }
 
@@ -459,15 +416,15 @@
     }
 
     .table :global(.tr:hover > *) {
-        background: rgba(100,130,255,0.2) !important
+        background: rgba(100, 130, 255, 0.2) !important
     }
 
     .details-host {
         /*flex-basis: 40%;*/
         /*flex-grow: 1;*/
         width: 30%;
-        background: rgba(0,0,0,0.2);
-        border-top: 2px solid rgba(255,255,255,0.2);
+        background: rgba(0, 0, 0, 0.2);
+        border-top: 2px solid rgba(255, 255, 255, 0.2);
         overflow-y: auto;
         overflow-x: hidden;
         /*display: flex;*/
@@ -488,7 +445,7 @@
 
     .results-host {
         flex-grow: 1;
-        max-height: 0%;
+        max-height: 0;
         background: black;
     }
 
@@ -496,11 +453,6 @@
         max-height: 30%;
         min-height: 30%;
         border-bottom: 2px white solid;
-    }
-
-    .results-host :global(.tr) {
-        background: rgba(0,0,0,0.3);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
     }
 
     .results-host :global(.tr > div) {
@@ -511,13 +463,13 @@
         font-size: 0.8em;
         box-sizing: border-box;
         padding: 2px 4px;
-        background: rgba(0,0,0,0.7);
-        border-bottom: 1px solid rgba(255,255,255,0.2);
+        background: rgba(0, 0, 0, 0.7);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
         cursor: pointer;
     }
 
     .orand:hover span {
-        background: rgba(255,255,255,0.1);
+        background: rgba(255, 255, 255, 0.1);
     }
 
     .orand span {
@@ -540,15 +492,4 @@
         color: white;
     }
 
-    .two-editor {
-        height: 50%;
-    }
-
-    .one-editor{
-        height: 100%;
-    }
-
-    .raw-decode-btn{
-        width: 80px !important;
-    }
 </style>

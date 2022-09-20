@@ -122,8 +122,8 @@ audio:not([controls]) {
  */
 
 html {
-    font-size: 100%;/* 1 */
-    -webkit-text-size-adjust: 100%;/* 2 */
+    font-size: 100%; /* 1 */
+    -webkit-text-size-adjust: 100%; /* 2 */
     -ms-text-size-adjust: 100%; /* 2 */
 }
 
@@ -248,7 +248,7 @@ input[type="reset"],
 input[type="submit"] {
     -webkit-appearance: button; /* 2 */
     cursor: pointer; /* 3 */
-    *overflow: visible;  /* 4 */
+    *overflow: visible; /* 4 */
 }
 
 /**
@@ -370,10 +370,9 @@ textarea {
 
 @font-face {
     font-family: 'shicon';
-    src:
-            url('/fonts/shicon.ttf?kckii0') format('truetype'),
-            url('/fonts/shicon.woff?kckii0') format('woff'),
-            url('/fonts/shicon.svg?kckii0#shicon') format('svg');
+    src: url('/fonts/shicon.ttf?kckii0') format('truetype'),
+    url('/fonts/shicon.woff?kckii0') format('woff'),
+    url('/fonts/shicon.svg?kckii0#shicon') format('svg');
     font-weight: normal;
     font-style: normal;
     font-display: block;
@@ -394,73 +393,273 @@ textarea {
     -moz-osx-font-smoothing: grayscale;
 }
 
-[data-icon="network-off-outline"]:before{content:"\e924"}
-[data-icon="play-network-outline"]:before{content:"\e934"}
-[data-icon="open-in-app"]:before{content:"\e937"}
-[data-icon="card-off"]:before{content:"\e923"}
-[data-icon="sharios"]:before{content:"\e922"}
-[data-icon="image-off-1"]:before{content:"\e921"}
-[data-icon="language"]:before{content:"\e918"}
-[data-icon="twitter"]:before{content:"\e916"}
-[data-icon="discord"]:before{content:"\e917"}
-[data-icon="heart"]:before{content:"\e912"}
-[data-icon="help"]:before{content:"\e910"}
-[data-icon="numeric-3"]:before{content:"\e90e"}
-[data-icon="numeric-4"]:before{content:"\e90f"}
-[data-icon="arrow-all"]:before{content:"\e90a"}
-[data-icon="email-outline"]:before{content:"\e90b"}
-[data-icon="keyboard_arrow_down"]:before{content:"\e90c"}
-[data-icon="information-outline"]:before{content:"\e90d"}
-[data-icon="clear"]:before{content:"\e911"}
-[data-icon="keyboard_arrow_left"]:before{content:"\e913"}
-[data-icon="keyboard_arrow_right"]:before{content:"\e914"}
-[data-icon="keyboard_arrow_up"]:before{content:"\e915"}
-[data-icon="fullscreen"]:before{content:"\e91a"}
-[data-icon="unfold_more"]:before{content:"\e91b"}
-[data-icon="check_box"]:before{content:"\e91c"}
-[data-icon="check_box_outline_blank"]:before{content:"\e91d"}
-[data-icon="collections_bookmark"]:before{content:"\e925"}
-[data-icon="code"]:before{content:"\e926"}
-[data-icon="chat"]:before{content:"\e927"}
-[data-icon="link"]:before{content:"\e928"}
-[data-icon="launch"]:before{content:"\e929"}
-[data-icon="file"]:before{content:"\e92a"}
-[data-icon="crop_free"]:before{content:"\e92b"}
-[data-icon="crop_original"]:before{content:"\e92c"}
-[data-icon="zoom_out_map"]:before{content:"\e92d"}
-[data-icon="fullscreen_exit"]:before{content:"\e92e"}
-[data-icon="menu"]:before{content:"\e92f"}
-[data-icon="keyboard_control"]:before{content:"\e930"}
-[data-icon="more_vert"]:before{content:"\e931"}
-[data-icon="search"]:before{content:"\e932"}
-[data-icon="settings"]:before{content:"\e933"}
-[data-icon="insert_drive_file"]:before{content:"\e935"}
-[data-icon="file-image-outline"]:before{content:"\e936"}
-[data-icon="pan"]:before{content:"\e939"}
-[data-icon="image"]:before{content:"\e93b"}
-[data-icon="zoom-out"]:before{content:"\e93c"}
-[data-icon="zoom-in"]:before{content:"\e93d"}
-[data-icon="cogs"]:before{content:"\e93e"}
-[data-icon="view-grid-plus"]:before{content:"\e93f"}
-[data-icon="palette"]:before{content:"\e941"}
-[data-icon="download"]:before{content:"\e942"}
-[data-icon="check"]:before{content:"\e943"}
-[data-icon="home"]:before{content:"\e944"}
-[data-icon="loading"]:before{content:"\e97c"}
-[data-icon="layout-gid"]:before{content:"\e91f"}
-[data-icon="layout-wide"]:before{content:"\e919"}
-[data-icon="layout-mid"]:before{content:"\e91e"}
-[data-icon="shinshin"]:before{content:"\e920"}
-[data-icon="art0"]:before{content:"\e900"}
-[data-icon="art1"]:before{content:"\e901"}
-[data-icon="art2"]:before{content:"\e902"}
-[data-icon="art3"]:before{content:"\e903"}
-[data-icon="art4"]:before{content:"\e904"}
-[data-icon="weapon"]:before{content:"\e905"}
-[data-icon="const"]:before{content:"\e906"}
-[data-icon="table"]:before{content:"\e907"}
-[data-icon="talent"]:before{content:"\e908"}
-[data-icon="info"]:before{content:"\e909"}
+[data-icon="network-off-outline"]:before {
+    content: "\e924"
+}
+
+[data-icon="play-network-outline"]:before {
+    content: "\e934"
+}
+
+[data-icon="open-in-app"]:before {
+    content: "\e937"
+}
+
+[data-icon="card-off"]:before {
+    content: "\e923"
+}
+
+[data-icon="sharios"]:before {
+    content: "\e922"
+}
+
+[data-icon="image-off-1"]:before {
+    content: "\e921"
+}
+
+[data-icon="language"]:before {
+    content: "\e918"
+}
+
+[data-icon="twitter"]:before {
+    content: "\e916"
+}
+
+[data-icon="discord"]:before {
+    content: "\e917"
+}
+
+[data-icon="heart"]:before {
+    content: "\e912"
+}
+
+[data-icon="help"]:before {
+    content: "\e910"
+}
+
+[data-icon="numeric-3"]:before {
+    content: "\e90e"
+}
+
+[data-icon="numeric-4"]:before {
+    content: "\e90f"
+}
+
+[data-icon="arrow-all"]:before {
+    content: "\e90a"
+}
+
+[data-icon="email-outline"]:before {
+    content: "\e90b"
+}
+
+[data-icon="keyboard_arrow_down"]:before {
+    content: "\e90c"
+}
+
+[data-icon="information-outline"]:before {
+    content: "\e90d"
+}
+
+[data-icon="clear"]:before {
+    content: "\e911"
+}
+
+[data-icon="keyboard_arrow_left"]:before {
+    content: "\e913"
+}
+
+[data-icon="keyboard_arrow_right"]:before {
+    content: "\e914"
+}
+
+[data-icon="keyboard_arrow_up"]:before {
+    content: "\e915"
+}
+
+[data-icon="fullscreen"]:before {
+    content: "\e91a"
+}
+
+[data-icon="unfold_more"]:before {
+    content: "\e91b"
+}
+
+[data-icon="check_box"]:before {
+    content: "\e91c"
+}
+
+[data-icon="check_box_outline_blank"]:before {
+    content: "\e91d"
+}
+
+[data-icon="collections_bookmark"]:before {
+    content: "\e925"
+}
+
+[data-icon="code"]:before {
+    content: "\e926"
+}
+
+[data-icon="chat"]:before {
+    content: "\e927"
+}
+
+[data-icon="link"]:before {
+    content: "\e928"
+}
+
+[data-icon="launch"]:before {
+    content: "\e929"
+}
+
+[data-icon="file"]:before {
+    content: "\e92a"
+}
+
+[data-icon="crop_free"]:before {
+    content: "\e92b"
+}
+
+[data-icon="crop_original"]:before {
+    content: "\e92c"
+}
+
+[data-icon="zoom_out_map"]:before {
+    content: "\e92d"
+}
+
+[data-icon="fullscreen_exit"]:before {
+    content: "\e92e"
+}
+
+[data-icon="menu"]:before {
+    content: "\e92f"
+}
+
+[data-icon="keyboard_control"]:before {
+    content: "\e930"
+}
+
+[data-icon="more_vert"]:before {
+    content: "\e931"
+}
+
+[data-icon="search"]:before {
+    content: "\e932"
+}
+
+[data-icon="settings"]:before {
+    content: "\e933"
+}
+
+[data-icon="insert_drive_file"]:before {
+    content: "\e935"
+}
+
+[data-icon="file-image-outline"]:before {
+    content: "\e936"
+}
+
+[data-icon="pan"]:before {
+    content: "\e939"
+}
+
+[data-icon="image"]:before {
+    content: "\e93b"
+}
+
+[data-icon="zoom-out"]:before {
+    content: "\e93c"
+}
+
+[data-icon="zoom-in"]:before {
+    content: "\e93d"
+}
+
+[data-icon="cogs"]:before {
+    content: "\e93e"
+}
+
+[data-icon="view-grid-plus"]:before {
+    content: "\e93f"
+}
+
+[data-icon="palette"]:before {
+    content: "\e941"
+}
+
+[data-icon="download"]:before {
+    content: "\e942"
+}
+
+[data-icon="check"]:before {
+    content: "\e943"
+}
+
+[data-icon="home"]:before {
+    content: "\e944"
+}
+
+[data-icon="loading"]:before {
+    content: "\e97c"
+}
+
+[data-icon="layout-gid"]:before {
+    content: "\e91f"
+}
+
+[data-icon="layout-wide"]:before {
+    content: "\e919"
+}
+
+[data-icon="layout-mid"]:before {
+    content: "\e91e"
+}
+
+[data-icon="shinshin"]:before {
+    content: "\e920"
+}
+
+[data-icon="art0"]:before {
+    content: "\e900"
+}
+
+[data-icon="art1"]:before {
+    content: "\e901"
+}
+
+[data-icon="art2"]:before {
+    content: "\e902"
+}
+
+[data-icon="art3"]:before {
+    content: "\e903"
+}
+
+[data-icon="art4"]:before {
+    content: "\e904"
+}
+
+[data-icon="weapon"]:before {
+    content: "\e905"
+}
+
+[data-icon="const"]:before {
+    content: "\e906"
+}
+
+[data-icon="table"]:before {
+    content: "\e907"
+}
+
+[data-icon="talent"]:before {
+    content: "\e908"
+}
+
+[data-icon="info"]:before {
+    content: "\e909"
+}
 
 
 body {
@@ -478,7 +677,7 @@ body {
 button {
     background: #4360A2;
     border: 0;
-    border-bottom: 2px solid rgba(0,0,0,0.4);
+    border-bottom: 2px solid rgba(0, 0, 0, 0.4);
     padding: 0.3em 0.4em;
     color: inherit;
 
@@ -491,6 +690,7 @@ button:hover {
 .green {
     background: green;
 }
+
 .red {
     background: darkred;
 }
