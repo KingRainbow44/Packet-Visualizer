@@ -21,23 +21,72 @@
     let tableHost: any = null;
     let showDecode: boolean = true;
 
-    setTimeout(() => {
-        let interval = setInterval(() => {
-            packets.push({
-                packetId: Math.floor(Math.random() * 100),
-                packetName: "TestPacket",
-                source: "server",
-                time: Math.floor(Math.random() * 100),
-                data: JSON.stringify({test: "test", a: "b", ffff: Math.floor(Math.random() * 100)}),
-                length: 1333,
-                index: packets.length
-            });
-            packets = packets;
-            
-            if (packets.length > 100)
-                clearInterval(interval);
-        }, 50);
-    }, 500);
+    let reconnectInterval = null;
+    let webSocket = new WebSocket("ws://localhost:8080");
+    webSocket.onopen = () => {
+        clear();
+
+        console.log("Connected to relay server.");
+        webSocket.send(JSON.stringify({ packetId: 0 }));
+        
+        if (reconnectInterval) {
+            alert("Reconnected to relay server.");
+            clearInterval(reconnectInterval);
+            reconnectInterval = null;
+        }
+    };
+    webSocket.onclose = () => {
+        alert("Lost connection to relay server.");
+        console.log("Disconnected from relay server.");
+        
+        reconnectInterval = setInterval(() => {
+            console.log("Attempting to reconnect to relay server...");
+            webSocket = new WebSocket("ws://localhost:8080");
+        }, 5000);
+    };
+    webSocket.onerror = error => {
+        console.log("Error: " + error);
+    };
+    webSocket.onmessage = message => {
+        const data = JSON.parse(message.data);
+        const packetId = data.packetId;
+        const packetData = data.data;
+
+        switch (packetId) {
+            default:
+                console.log("Unknown packet id: " + packetId);
+                return;
+            case 0:
+                showPacket({
+                    time: message.timeStamp,
+                    source: "client",
+                    packetId: 0,
+                    packetName: "Handshake",
+                    length: packetData.length,
+                    data: JSON.stringify({ timestamp: packetData })
+                });
+                return;
+            case 1:
+                // Parse the packet data.
+                const packet = JSON.parse(packetData);
+                // Change the timestamp.
+                packet.time = message.timeStamp;
+                
+                // Visualize the packet on the frontend.
+                showPacket(packet);
+                return;
+        }
+    }
+
+    /**
+     * Pushes a packet to the packet list.
+     * @param packet The packet to push.
+     */
+    function showPacket(packet) {
+        packet.index = packets.length;
+        packets.push(packet);
+        packets = packets;
+    }
     
     /**
      * Scrolls to the specified index.
@@ -286,7 +335,7 @@
                 <div class="tbody" bind:this={tableHost}>
                     <VirtualList items={packets} let:item={packet} bind:scrollToIndex bind:end={endIndex}>
                         <!-- this will be rendered for each currently visible item -->
-                        <Packet packet={packet} idx={packet.index + 1} current={packet == currentPacket} on:click={() => showPacketDetails(packet)}/>
+                        <Packet packet={packet} idx={packet.index} current={packet == currentPacket} on:click={() => showPacketDetails(packet)}/>
                     </VirtualList>
                 </div>
             </div>

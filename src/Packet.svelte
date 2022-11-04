@@ -6,8 +6,8 @@
 
 <!-- UI Start. -->
 <div class="tr" class:current on:click class:o={idx % 2}>
-  <div class="time">{#if packet.time}{packet.time.toFixed(3)}{/if}</div>
-  <div class="idx">{idx}</div>
+  <div class="time">{#if packet.time}{packet.time.toFixed(0)}{/if}</div>
+  <div class="idx">{idx + 1}</div>
   <div class="src"><span class="{packet.source}">{packet.source.toUpperCase()}</span></div>
   <div class="id">{packet.packetId}</div>
   <div class="name">{packet.packetName}</div>
