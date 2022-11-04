@@ -1,0 +1,32 @@
+{
+  "name": "packet-visualizer",
+  "description": "Visualize packets with a familiar UI.",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "svelte-check --tsconfig ./tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/node": "^18.11.9",
+    
+    "@sveltejs/vite-plugin-svelte": "^1.1.0",
+    "@tsconfig/svelte": "^3.0.0",
+    "json-bigint": "^1.0.0",
+    "prettier": "^2.7.1",
+    "sirv-cli": "^2.0.0",
+    "svelte": "^3.52.0",
+    "svelte-check": "^2.9.2",
+    "svelte-jsoneditor": "^0.3.58",
+    "svelte-preprocess": "^4.10.7",
+    "svelte-virtual-list-ce": "^3.1.0-beta.2",
+    "tslib": "^2.4.0",
+    "typescript": "^4.6.4",
+    "vite": "^3.2.0"
+  },
+  "dependencies": {
+    "svelte-highlight": "^6.2.1"
+  }
+}
