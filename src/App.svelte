@@ -8,11 +8,12 @@
 
     // Property declaration.
     let stick: any = null;
-    let packets: any[] = [];
-    let filteredPackets: any[] = [];
     let currentPacket: any | null = null;
+
+    let packets = [], filteredPackets = [];
     let filter: string = "", jsonFilter: string = "";
     let endIndex: number = 0, filterEndIndex: number = 0;
+
     let node: any, details: any, filterTableHost: any, orand: boolean = true;
     
     let editorCss: string = "";
@@ -67,13 +68,10 @@
                 });
                 return;
             case 1:
-                // Parse the packet data.
-                const packet = JSON.parse(packetData);
-                // Change the timestamp.
-                packet.time = message.timeStamp;
-                
+                // Change the time.
+                packetData.time = message.timeStamp;
                 // Visualize the packet on the frontend.
-                showPacket(packet);
+                showPacket(packetData);
                 return;
         }
     }
@@ -91,12 +89,12 @@
     /**
      * Scrolls to the specified index.
      */
-    let scrollToIndex = () => {};
+    let scrollToIndex = (index: number, behavior?: any) => {};
 
     /**
      * Scrolls to the specified item.
      */
-    let scrollToIndexFilter = () => {};
+    let scrollToIndexFilter = (index: number, behavior?: any) => {};
 
     /**
      * Scrolls to the end of the chain.
@@ -219,25 +217,7 @@
      * @param text The data to place in the clipboard.
      */
     function copyToClipboard(text: string) {
-        if (window.clipboardData && window.clipboardData.setData) {
-            // Internet Explorer-specific code path to prevent textarea being shown while dialog is visible.
-            return window.clipboardData.setData("Text", text);
-        } else if (document.queryCommandSupported && document.queryCommandSupported("copy")) {
-            const textArea = document.createElement("textarea");
-            textArea.textContent = text;
-            textArea.style.position = "fixed";  // Prevent scrolling to bottom of page in Microsoft Edge.
-            document.body.appendChild(textArea);
-            textArea.select();
-            
-            try {
-                return document.execCommand("copy");  // Security exception may be thrown by some browsers.
-            } catch {
-                console.warn("Copy to clipboard failed.");
-                return prompt("Copy to clipboard: Ctrl + C, Enter", text);
-            } finally {
-                document.body.removeChild(textArea);
-            }
-        }
+        return window.navigator.clipboard.writeText(text);
     }
 
     /**
@@ -254,8 +234,8 @@
         tick().then(() => {
             filteredPackets = packets.filter(packetFilter, filter, jsonFilter);
             setTimeout(() => {
-                scrollToIndexFilter(10, {behavior: 'auto'})
-                scrollToIndexFilter(0, {behavior: 'auto'})
+                scrollToIndexFilter(10, { behavior: "auto" })
+                scrollToIndexFilter(0, { behavior: "auto" })
             }, 10);
         });
     } else {
@@ -265,11 +245,13 @@
     }
 
     $: {
-        tick().then(() => scrollToEnd(filter, jsonFilter));
+        // tick().then(() => scrollToEnd(filter, jsonFilter));
+        tick().then(() => scrollToEnd());
     }
     
     $: if (stick) {
-        tick().then(() => scrollToEnd(packets));
+        // tick().then(() => scrollToEnd(packets));
+        tick().then(() => scrollToEnd());
     }
 </script>
 
@@ -537,7 +519,7 @@
 
     .results-host {
         flex-grow: 1;
-        max-height: 0%;
+        max-height: 0;
         background: black;
     }
 
@@ -584,6 +566,10 @@
         margin-bottom: 2px;
     }
 
+    .orand span[or] {
+
+    }
+
     .orand span.s {
         background: #1AA1E7;
         color: white;
@@ -593,11 +579,11 @@
         height: 50%;
     }
 
-    .one-editor{
+    .one-editor {
         height: 100%;
     }
 
-    .raw-decode-btn{
+    .raw-decode-btn {
         width: 80px !important;
     }
 </style>
