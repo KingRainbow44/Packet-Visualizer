@@ -99,7 +99,7 @@
     /**
      * Scrolls to the end of the chain.
      */
-    function scrollToEnd() {
+    function scrollToEnd(value, value2?) {
         scrollToIndex(packets.length - 1, { behavior: "auto" });
     }
     
@@ -246,12 +246,12 @@
 
     $: {
         // tick().then(() => scrollToEnd(filter, jsonFilter));
-        tick().then(() => scrollToEnd());
+        tick().then(() => scrollToEnd(filter, jsonFilter));
     }
     
     $: if (stick) {
         // tick().then(() => scrollToEnd(packets));
-        tick().then(() => scrollToEnd());
+        tick().then(() => scrollToEnd(packets));
     }
 </script>
 
