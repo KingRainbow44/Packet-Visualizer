@@ -1,49 +1,44 @@
 <script lang="ts">
     import Packet from "./Packet.svelte";
     import VirtualList from "svelte-virtual-list-ce";
-    
+
     import { tick } from "svelte";
-    import { JSONEditor } from "svelte-jsoneditor";
+    import { JSONEditor, type MenuItem, type MenuSeparatorItem, type MenuSpaceItem } from "svelte-jsoneditor";
     import "svelte-jsoneditor/themes/jse-theme-dark.css";
 
-    // Property declaration.
-    let stick: any = null;
-    let currentPacket: any | null = null;
+    import type { Packet as PacketType } from "./types.ts";
 
-    let packets = [], filteredPackets = [];
-    let filter: string = "", jsonFilter: string = "";
-    let endIndex: number = 0, filterEndIndex: number = 0;
+    // Property declaration.
+    const connectUrl = () => `${location.protocol === "https:" ? "wss" : "ws"}://${location.hostname}:8080`;
+
+    let stick: any = null;
+    let currentPacket: PacketType | null = null;
+
+    let packets: PacketType[] = [],
+        filteredPackets: PacketType[] = [];
+    let filter: string = "",
+        jsonFilter: string = "";
+    let endIndex: number = 0,
+        filterEndIndex: number = 0;
 
     let node: any, details: any, filterTableHost: any, orand: boolean = true;
-    
+
     let editorCss: string = "";
     let editor: JSONEditor, decodeEditor: any = true;
 
     let tableHost: any = null;
     let showDecode: boolean = true;
 
-    let reconnectInterval = null;
-    let webSocket = new WebSocket("ws://localhost:8080");
+    let webSocket = new WebSocket(connectUrl());
     webSocket.onopen = () => {
         clear();
 
         console.log("Connected to relay server.");
         webSocket.send(JSON.stringify({ packetId: 0 }));
-        
-        if (reconnectInterval) {
-            alert("Reconnected to relay server.");
-            clearInterval(reconnectInterval);
-            reconnectInterval = null;
-        }
     };
     webSocket.onclose = () => {
         alert("Lost connection to relay server.");
         console.log("Disconnected from relay server.");
-        
-        reconnectInterval = setInterval(() => {
-            console.log("Attempting to reconnect to relay server...");
-            webSocket = new WebSocket("ws://localhost:8080");
-        }, 5000);
     };
     webSocket.onerror = error => {
         console.log("Error: " + error);
@@ -80,29 +75,30 @@
      * Pushes a packet to the packet list.
      * @param packet The packet to push.
      */
-    function showPacket(packet) {
+    function showPacket(packet: PacketType) {
         packet.index = packets.length;
         packets.push(packet);
         packets = packets;
     }
-    
+
     /**
      * Scrolls to the specified index.
      */
-    let scrollToIndex = (index: number, behavior?: any) => {};
+    let scrollToIndex: (index: number, behavior?: any) => void;
 
     /**
      * Scrolls to the specified item.
      */
-    let scrollToIndexFilter = (index: number, behavior?: any) => {};
+    let scrollToIndexFilter: (index: number, behavior?: any) => void;
 
     /**
      * Scrolls to the end of the chain.
      */
-    function scrollToEnd(value, value2?) {
-        scrollToIndex(packets.length - 1, { behavior: "auto" });
+    function scrollToEnd(..._: any[]) {
+        scrollToIndex?.(packets.length, { behavior: "auto" });
+        scrollToIndexFilter?.(filteredPackets.length, { behavior: "auto" });
     }
-    
+
     /**
      * Clears the stored packets.
      */
@@ -111,17 +107,30 @@
     }
 
     /**
+     * Downloads all packets as a JSON file.
+     */
+    function downloadPackets() {
+        const data = JSON.stringify(packets, null, 4);
+
+        const download = document.createElement("a");
+        download.href = URL.createObjectURL(new Blob([data], { type: "application/json" }));
+        download.download = "packets.json";
+        download.click();
+        download.remove();
+    }
+
+    /**
      * Copies data about the currently selected packet.
      */
     function copyCurrentPacket() {
-        copyToClipboard(currentPacket.data);
+        copyToClipboard(currentPacket.binary ?? currentPacket.data);
     }
 
     /**
      * Shows details about a packet.
      * @param packet The packet to show details about.
      */
-    function showPacketDetails(packet) {
+    function showPacketDetails(packet: PacketType) {
         currentPacket = packet;
         tick().then(() => {
             if (packet.data && packet.decode && showDecode) {
@@ -143,10 +152,10 @@
 
     /**
      * Handles rendering the packet flyout menu.
-     * @param mode The mode to render.
+     * @param _ The mode to render.
      * @param items The items to render.
      */
-    function handleRenderMenu(mode, items) {
+    function handleRenderMenu(_: "tree" | "code" | "repair", items: MenuItem[]): MenuItem[] {
         const rawDecButton = {
             onClick: toggleShowDecode,
             text: "RD",
@@ -154,28 +163,128 @@
             className: "jse-button raw-decode-btn",
         };
 
-        const space = { space: true };
-        const separator = { separator: true };
+        const space = { space: true } as MenuSpaceItem;
+        const separator = { separator: true } as MenuSeparatorItem;
         const itemsWithoutSpace = items.slice(0, items.length - 1);
-        return itemsWithoutSpace.concat([separator, rawDecButton, space]);
+        return itemsWithoutSpace.concat([
+            separator, rawDecButton, space
+        ]);
     }
-    
+
+    type ComplexFilters = {
+        matchAll?: boolean;
+        length?: number;
+    };
+
     /**
      * Creates a packet filter from a packet and the current filters.
+     *
+     * orand - true == AND, false == OR
+     * filter - packet name filter
+     * jsonFilter - packet content filter
      */
-    function packetFilter(packet) {
-        if(!filter.length && !jsonFilter.length) return false;
-        let and: any = filter.length && jsonFilter.length;
-        if(!orand) and = false;
-        let text, json;
-        if(filter.length && packet.packetName.includes && 
-          packet.packetName.toLowerCase().includes(filter.toLowerCase())) text = true;
-        if(filter.length && ('' + packet.packetId).includes(filter)) text = true;
-        if(!and && text) return true;
-        if(jsonFilter.length && packet.object && 
-          JSON.stringify(packet.object).toLowerCase().includes(jsonFilter.toLowerCase())) json = true;
-        if(!and && json) return true;
-        return !!(and && text && json);
+    function packetFilter({ packetId, packetName, length, data }: PacketType) {
+        // Compare the packet's name and ID to the filter.
+        const filterResult =
+            filter.trim().length == 0 ||
+            packetId.toString() == filter ||
+            packetName.toLowerCase().includes(filter.toLowerCase());
+
+        // Compare the packet's data to the JSON filter.
+        const filters: ComplexFilters = {};
+        let parsedFilter = jsonFilter.trim();
+        if (parsedFilter.startsWith("@")) {
+            let parts = parsedFilter.split(";").map(v => v.trim());
+            parsedFilter = parts[parts.length - 1];
+
+            parts = parts.slice(0, parts.length - 1);
+            for (const part of parts) {
+                const action = part.substring(1);
+                const segments = action.split(".").map(v => v.trim());
+                switch (segments[0]) {
+                    case "some":
+                        filters.matchAll = false;
+                        break;
+                    case "len":
+                    case "length":
+                        filters.length = parseInt(segments[1]);
+                        break;
+                }
+            }
+        }
+
+        // Parse the filters and do the comparison.
+        let parsed: any | undefined = undefined;
+        try {
+            parsed = JSON.parse(parsedFilter);
+        } catch (e) {
+            parsed = parsedFilter
+                .split(",")
+                .map(v => v.trim());
+        }
+        const jsonResult =
+            jsonFilter.trim().length == 0 ||
+            (
+                recursiveCompare(JSON.parse(data), parsed, filters.matchAll ?? true) &&
+                (filters.length != undefined ? length >= filters.length : true)
+            );
+
+        return orand ?
+            filterResult && jsonResult :
+            filterResult || jsonResult;
+    }
+
+    /**
+     * Recursively determines all values in an object.
+     *
+     * @param data The data to determine values for.
+     */
+    function allValues(data: object): any[] {
+        let values: any[] = [];
+        for (const key in data) {
+            if (typeof data[key] == "object") {
+                values = values.concat(allValues(data[key]));
+            } else if (Array.isArray(data[key])) {
+                values = values.concat(data[key]);
+            } else {
+                values.push(data[key]);
+            }
+        }
+        return values;
+    }
+
+    /**
+     * Compare two objects recursively by their values.
+     *
+     * A filter with the following structure:
+     * ["test1", "test2"] will match { "randomKey": "test1", "other": "test2", "nested": { "key": "something else" } }
+     *
+     * A filter with the following structure:
+     * ["something else"] will match { "randomKey": "test1", "other": "test2", "nested": { "key": "something else" } }
+     *
+     * @param data The data to compare.
+     * @param filters The filters to compare against. Must match all to return true.
+     *
+     * @param matchAll Should all filters match to return true?
+     */
+    function recursiveCompare(
+        data: object, filters: any[],
+        matchAll: boolean = true
+    ): boolean {
+        const values = allValues(data);
+
+        // declare array of filters as [false]
+        // for-each filter as filterVal; if filterVal is in values, mark filter as true
+        // if all filters are true, return true
+
+        let passed: boolean[] = [];
+        for (const filterVal of filters) {
+            passed.push(values.includes(filterVal));
+        }
+
+        return matchAll ?
+            passed.every(v => v == true) :
+            passed.some(v => v == true);
     }
 
     /**
@@ -185,10 +294,11 @@
     function toggleShowDecode() {
         tick().then(() => {
             showDecode = !showDecode;
+            currentPacket.decode = true;
             showPacketDetails(currentPacket);
         });
     }
-    
+
     /*
      * Browser utilities.
      */
@@ -201,17 +311,17 @@
         const rect: any = node.getBoundingClientRect();
         details.style.width = 100 - (((event.clientX - rect.left) / node.offsetWidth) * 100) + '%';
     }
-    
+
     /**
      * Invoked when the resize event is done.
-     * @param event The event.
+     * @param _ The event.
      */
-    function stopResize(event: any) {
-        document.removeEventListener('mouseup', stopResize);
-        document.removeEventListener('mousemove', move);
+    function stopResize(_: MouseEvent) {
+        document.removeEventListener("mouseup", stopResize);
+        document.removeEventListener("mousemove", move);
         node.style.userSelect = null;
     }
-    
+
     /**
      * Copies the specified text to the user's clipboard.
      * @param text The data to place in the clipboard.
@@ -222,21 +332,17 @@
 
     /**
      * Invoked when the browser window is resized.
-     * @param event The event.
+     * @param _ The event.
      */
-    function onResize(event: Event) {
-        node.style.userSelect = 'none';
-        document.addEventListener('mousemove', move);
-        document.addEventListener('mouseup', stopResize);
+    function onResize(_: Event) {
+        node.style.userSelect = "none";
+        document.addEventListener("mousemove", move);
+        document.addEventListener("mouseup", stopResize);
     }
-    
-    $: if(filter.length || jsonFilter.length || orand) {
+
+    $: if (filter.length > 0 || jsonFilter.length > 0) {
         tick().then(() => {
-            filteredPackets = packets.filter(packetFilter, filter, jsonFilter);
-            setTimeout(() => {
-                scrollToIndexFilter(10, { behavior: "auto" })
-                scrollToIndexFilter(0, { behavior: "auto" })
-            }, 10);
+            filteredPackets = packets.filter(packetFilter);
         });
     } else {
         tick().then(() => {
@@ -244,14 +350,12 @@
         });
     }
 
-    $: {
-        // tick().then(() => scrollToEnd(filter, jsonFilter));
-        tick().then(() => scrollToEnd(filter, jsonFilter));
-    }
-    
     $: if (stick) {
-        // tick().then(() => scrollToEnd(packets));
         tick().then(() => scrollToEnd(packets));
+    }
+
+    $: if (stick) {
+        tick().then(() => scrollToEnd(filteredPackets));
     }
 </script>
 
@@ -264,10 +368,11 @@
     <button title="Clear" data-icon="clear" class="red" on:click={clear}></button>
     <button title="Lock scroll at the bottom" data-icon="keyboard_arrow_down" style="margin-top: auto;" class:green={stick} on:click={() => stick = !stick}></button>
     {#if currentPacket}
-        <button title="Copy current packet" data-icon="collections_bookmark" on:click={copyCurrentPacket}></button>
+        <button title="Download all packets" data-icon="insert_drive_file" on:click={downloadPackets} />
+        <button title="Copy current packet" data-icon="collections_bookmark" on:click={copyCurrentPacket} />
     {:else}
-        <button title="Copy current packet" data-icon="insert_drive_file" style="margin-top: auto; opacity: 0.5"></button>
-        <button title="Copy current packet" data-icon="collections_bookmark" style="opacity: 0.5"></button>
+        <button title="Download all packets" data-icon="insert_drive_file" style="opacity: 0.5" />
+        <button title="Copy current packet" data-icon="collections_bookmark" style="opacity: 0.5" />
     {/if}
 </aside>
 
@@ -275,13 +380,17 @@
     <div class="main-host">
         <div class="filter-host">
             <input type="text" bind:value={filter} placeholder=" PACKET" />
-            <div class="orand" on:click={() => orand = !orand}>
+            <div
+                    class="orand"
+                    on:click={() => orand = !orand}
+                    on:keypress={() => null}
+            >
                 <span and class:s={orand}>AND</span>
                 <span or class:s={!orand}>OR</span>
             </div>
             <input type="text" bind:value={jsonFilter} placeholder=" JSON" />
         </div>
-        
+
         <div class="results-host" class:open={filter.length || jsonFilter.length}>
             <div class="table">
                 <div class="tr thead">
@@ -295,14 +404,20 @@
                 </div>
                 <div class="tbody" bind:this={filterTableHost}>
                     <VirtualList items={filteredPackets} let:item={packet} bind:scrollToIndexFilter bind:end={filterEndIndex}>
-                        <Packet packet={packet} idx={packet.index} current={packet == currentPacket} on:click={() => {
-                            scrollToIndex(packet.index); showPacketDetails(packet);
-                        }}/>
+                        <Packet
+                                packet={packet}
+                                idx={packet.index}
+                                current={packet == currentPacket}
+                                on:click={() => {
+                                    scrollToIndex?.(packet.index);
+                                    showPacketDetails?.(packet);
+                                }}
+                        />
                     </VirtualList>
                 </div>
             </div>
         </div>
-        
+
         <div class="table-host">
             <div class="table">
                 <div class="tr thead">
@@ -317,15 +432,20 @@
                 <div class="tbody" bind:this={tableHost}>
                     <VirtualList items={packets} let:item={packet} bind:scrollToIndex bind:end={endIndex}>
                         <!-- this will be rendered for each currently visible item -->
-                        <Packet packet={packet} idx={packet.index} current={packet == currentPacket} on:click={() => showPacketDetails(packet)}/>
+                        <Packet
+                                packet={packet}
+                                idx={packet.index}
+                                current={packet == currentPacket}
+                                on:click={() => showPacketDetails(packet)}
+                        />
                     </VirtualList>
                 </div>
             </div>
         </div>
     </div>
-    
+
     <div class="resize" on:mousedown={onResize}></div>
-    
+
     <div class="details-host" bind:this={details}>
         {#if currentPacket}
             {#if currentPacket.data}
@@ -337,7 +457,7 @@
                     />
                 </div>
             {/if}
-            
+
             {#if currentPacket.decode && showDecode}
                 <div class="{editorCss} jse-theme-dark">
                     <JSONEditor bind:this={decodeEditor} readOnly />
@@ -566,9 +686,6 @@
         margin-bottom: 2px;
     }
 
-    .orand span[or] {
-
-    }
 
     .orand span.s {
         background: #1AA1E7;
